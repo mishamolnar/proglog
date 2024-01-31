@@ -1,0 +1,17 @@
+### POST request to producer
+POST http://localhost:8080
+Content-Type: application/json
+
+{
+  "record": {
+    "value": "TGV0J3MgR28gIzEK"
+  }
+}
+
+###
+GET http://localhost:8080
+Content-Type: application/json
+
+{
+  "offset": 4
+}
