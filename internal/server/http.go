@@ -4,8 +4,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/go-chi/chi/v5"
-	"log"
+	"github.com/mishamolnar/proglog/api/v1"
+	"github.com/mishamolnar/proglog/internal/log"
 	"net/http"
+	"os"
 )
 
 func NewHTTPServer(addr string) *http.Server {
@@ -20,17 +22,22 @@ func NewHTTPServer(addr string) *http.Server {
 }
 
 type httpServer struct {
-	Log *Log
+	Log *log.Log
 }
 
 func newHTTPServer() *httpServer {
+	l, err := log.NewLog("/tmp/logs", log.Config{})
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
 	return &httpServer{
-		Log: NewLog(),
+		Log: l,
 	}
 }
 
 type ProduceRequest struct {
-	Record Record `json:"record"`
+	Record log_v1.Record `json:"record"`
 }
 
 type ProducerResponse struct {
@@ -45,14 +52,14 @@ func (h *httpServer) handleProduce(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	offset, err := h.Log.Append(req.Record)
+	offset, err := h.Log.Append(&req.Record)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 	err = json.NewEncoder(w).Encode(ProducerResponse{Offset: offset})
 	if err != nil {
-		log.Printf("Could not write to response body %v \n", err)
+		fmt.Printf("Could not write to response body %v \n", err)
 	}
 }
 
@@ -61,7 +68,7 @@ type ConsumerRequest struct {
 }
 
 type ConsumerResponse struct {
-	Record Record `json:"record"`
+	Record *log_v1.Record `json:"record"`
 }
 
 func (h *httpServer) handleConsume(w http.ResponseWriter, r *http.Request) {
@@ -72,8 +79,8 @@ func (h *httpServer) handleConsume(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	record, err := h.Log.Read(req.Offset)
-	if err == ErrOffsetNotFound {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+	if e, ok := err.(log.OutOfRangeError); ok {
+		http.Error(w, e.Error(), http.StatusBadRequest)
 		return
 	}
 	if err != nil {
