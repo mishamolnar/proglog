@@ -43,7 +43,7 @@ func testAppendRead(t *testing.T, log *Log) {
 func testOutOfRangeErr(t *testing.T, log *Log) {
 	read, err := log.Read(1)
 	require.Nil(t, read)
-	require.Equal(t, OutOfRangeError(1), err)
+	require.Equal(t, log_v1.ErrOffsetOutOfRange{Offset: 1}, err)
 }
 
 func testInitExisting(t *testing.T, log *Log) {
@@ -101,6 +101,4 @@ func testTruncate(t *testing.T, log *Log) {
 
 	hiOff, err := log.HighestOffset()
 	require.Equal(t, hiOff, uint64(4))
-
-
 }

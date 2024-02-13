@@ -1,7 +1,6 @@
 package log
 
 import (
-	"fmt"
 	log_v1 "github.com/mishamolnar/proglog/api/v1"
 	"io"
 	"os"
@@ -95,15 +94,9 @@ func (l *Log) Read(off uint64) (*log_v1.Record, error) {
 		}
 	}
 	if s == nil || s.nextOffset <= off {
-		return nil, OutOfRangeError(off)
+		return nil, log_v1.ErrOffsetOutOfRange{Offset: off}
 	}
 	return s.Read(off)
-}
-
-type OutOfRangeError uint64
-
-func (l OutOfRangeError) Error() string {
-	return fmt.Sprintf("offset %d is out of range for log", l)
 }
 
 func (l *Log) Close() error {
@@ -118,8 +111,6 @@ func (l *Log) Close() error {
 }
 
 func (l *Log) Remove() error {
-	l.mu.Lock()
-	defer l.mu.Unlock()
 	if err := l.Close(); err != nil {
 		return err
 	}

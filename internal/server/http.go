@@ -79,7 +79,7 @@ func (h *httpServer) handleConsume(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	record, err := h.Log.Read(req.Offset)
-	if e, ok := err.(log.OutOfRangeError); ok {
+	if e, ok := err.(log_v1.ErrOffsetOutOfRange); ok {
 		http.Error(w, e.Error(), http.StatusBadRequest)
 		return
 	}
